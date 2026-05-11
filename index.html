@@ -1,0 +1,212 @@
+# index.html
+snake.io
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>지렁이 게임</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    canvas {
+      background: #222;
+      border: 4px solid #4CAF50;
+    }
+
+    .top-ui {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #score {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    #message {
+      margin-top: 10px;
+      color: #ff6666;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🐛 지렁이 게임</h1>
+
+  <div class="top-ui">
+    <button id="startBtn">게임 시작</button>
+    <div id="score">점수: 0</div>
+  </div>
+
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <div id="message"></div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const box = 20;
+    const canvasSize = 400;
+
+    let worm;
+    let direction;
+    let food;
+    let score;
+    let game;
+    let isRunning = false;
+
+    const scoreText = document.getElementById("score");
+    const message = document.getElementById("message");
+
+    function initGame() {
+      worm = [
+        { x: 10 * box, y: 10 * box }
+      ];
+
+      direction = "RIGHT";
+
+      food = {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+      };
+
+      score = 0;
+      scoreText.innerText = "점수: 0";
+      message.innerText = "";
+    }
+
+    document.addEventListener("keydown", changeDirection);
+
+    function changeDirection(event) {
+      const key = event.key;
+
+      if (key === "ArrowUp" && direction !== "DOWN") {
+        direction = "UP";
+      } else if (key === "ArrowDown" && direction !== "UP") {
+        direction = "DOWN";
+      } else if (key === "ArrowLeft" && direction !== "RIGHT") {
+        direction = "LEFT";
+      } else if (key === "ArrowRight" && direction !== "LEFT") {
+        direction = "RIGHT";
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 먹이 그리기
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      // 지렁이 그리기
+      for (let i = 0; i < worm.length; i++) {
+        ctx.fillStyle = i === 0 ? "#7CFC00" : "#32CD32";
+        ctx.fillRect(worm[i].x, worm[i].y, box, box);
+
+        ctx.strokeStyle = "#111";
+        ctx.strokeRect(worm[i].x, worm[i].y, box, box);
+      }
+
+      // 머리 위치
+      let wormX = worm[0].x;
+      let wormY = worm[0].y;
+
+      if (direction === "UP") wormY -= box;
+      if (direction === "DOWN") wormY += box;
+      if (direction === "LEFT") wormX -= box;
+      if (direction === "RIGHT") wormX += box;
+
+      // 먹이 먹었을 때
+      if (wormX === food.x && wormY === food.y) {
+        score++;
+        scoreText.innerText = "점수: " + score;
+
+        food = {
+          x: Math.floor(Math.random() * 20) * box,
+          y: Math.floor(Math.random() * 20) * box
+        };
+      } else {
+        worm.pop();
+      }
+
+      const newHead = {
+        x: wormX,
+        y: wormY
+      };
+
+      // 벽 충돌
+      if (
+        wormX < 0 ||
+        wormY < 0 ||
+        wormX >= canvasSize ||
+        wormY >= canvasSize
+      ) {
+        clearInterval(game);
+        isRunning = false;
+        message.innerText = "💀 게임 오버! 다시 시작해보세요.";
+        return;
+      }
+
+      // 자기 몸 충돌
+      for (let i = 0; i < worm.length; i++) {
+        if (wormX === worm[i].x && wormY === worm[i].y) {
+          clearInterval(game);
+          isRunning = false;
+          message.innerText = "💀 자기 몸에 부딪혔습니다!";
+          return;
+        }
+      }
+
+      worm.unshift(newHead);
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      if (isRunning) return;
+
+      initGame();
+
+      game = setInterval(draw, 120);
+
+      isRunning = true;
+    });
+
+    initGame();
+  </script>
+
+</body>
+</html>
